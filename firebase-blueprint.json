@@ -1,0 +1,164 @@
+{
+  "entities": {
+    "Profile": {
+      "title": "Profile",
+      "description": "Anadhi Sharma's general profile and introduction metadata.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "bio": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "videoTranscript": { "type": "string" },
+        "techAxisTitle": { "type": "string" },
+        "techAxisContent": { "type": "string" },
+        "stratAxisTitle": { "type": "string" },
+        "stratAxisContent": { "type": "string" },
+        "commBridgerTitle": { "type": "string" },
+        "commBridgerContent": { "type": "string" }
+      },
+      "required": ["name", "email", "title", "bio"]
+    },
+    "Experience": {
+      "title": "Experience",
+      "description": "A professional work experience entry.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string" },
+        "company": { "type": "string" },
+        "location": { "type": "string" },
+        "period": { "type": "string" },
+        "points": { "type": "array" },
+        "order": { "type": "number" }
+      },
+      "required": ["role", "company", "period", "points", "order"]
+    },
+    "Education": {
+      "title": "Education",
+      "description": "An academic degree or study history entry.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "degree": { "type": "string" },
+        "school": { "type": "string" },
+        "period": { "type": "string" },
+        "focus": { "type": "string" },
+        "thesisTitle": { "type": "string" },
+        "thesisLink": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["degree", "school", "period", "order"]
+    },
+    "SkillCategory": {
+      "title": "Skill Category",
+      "description": "A group of professional skills or tools.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "category": { "type": "string" },
+        "items": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["category", "items", "order"]
+    },
+    "Certification": {
+      "title": "Certification",
+      "description": "A professional certificate or specialization.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "issuer": { "type": "string" },
+        "date": { "type": "string" },
+        "description": { "type": "string" },
+        "focus": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["title", "issuer", "date", "order"]
+    },
+    "CoverLetter": {
+      "title": "Cover Letter",
+      "description": "Personalized cover letter text.",
+      "type": "object",
+      "properties": {
+        "recipient": { "type": "string" },
+        "body": { "type": "string" }
+      },
+      "required": ["recipient", "body"]
+    },
+    "Thesis": {
+      "title": "Thesis Detail",
+      "description": "Details regarding Academic Thesis.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "abstract": { "type": "string" },
+        "link": { "type": "string" },
+        "published": { "type": "string" },
+        "focus": { "type": "string" },
+        "commGapSolvedTitle": { "type": "string" },
+        "commGapSolvedHeading": { "type": "string" },
+        "commGapSolvedDescription": { "type": "string" },
+        "commGapPointATitle": { "type": "string" },
+        "commGapPointADesc": { "type": "string" },
+        "commGapPointBTitle": { "type": "string" },
+        "commGapPointBDesc": { "type": "string" },
+        "commGapFooterTagline": { "type": "string" }
+      },
+      "required": ["title", "abstract"]
+    },
+    "DocumentAttachment": {
+      "title": "Document Attachment",
+      "description": "Attached files like Resumes and Cover Letters.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "fileType": { "type": "string" },
+        "uploadedAt": { "type": "string" },
+        "size": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "fileUrl", "uploadedAt"]
+    }
+  },
+  "firestore": {
+    "/profiles/{profileId}": {
+      "schema": "Profile",
+      "description": "Store user profiles, typically just one master document."
+    },
+    "/experiences/{experienceId}": {
+      "schema": "Experience",
+      "description": "Work history items."
+    },
+    "/education/{educationId}": {
+      "schema": "Education",
+      "description": "Academic credentials."
+    },
+    "/skills/{skillId}": {
+      "schema": "SkillCategory",
+      "description": "Grouped list of skills and tools."
+    },
+    "/certifications/{certificationId}": {
+      "schema": "Certification",
+      "description": "Certificates and specializations."
+    },
+    "/cover_letter/{letterId}": {
+      "schema": "CoverLetter",
+      "description": "Cover letter content."
+    },
+    "/thesis/{thesisId}": {
+      "schema": "Thesis",
+      "description": "Thesis details and metadata."
+    },
+    "/documents/{documentId}": {
+      "schema": "DocumentAttachment",
+      "description": "Store custom documents and attachments."
+    }
+  }
+}
