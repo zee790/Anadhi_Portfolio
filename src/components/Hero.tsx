@@ -238,27 +238,6 @@ export const Hero: React.FC = () => {
   return (
     <section className="relative overflow-hidden pt-12 pb-16 border-b border-white/10 bg-gradient-to-b from-[#02040a] via-[#080d1a] to-[#02040a]">
       
-      {/* Absolute Admin Section Toggle for Recruiters */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2 no-print">
-        {isSandboxMode && (
-          <div className="hidden sm:flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs px-3 py-1 rounded-full animate-pulse">
-            <ShieldAlert className="w-3.5 h-3.5" />
-            Sandbox Playground Enabled
-          </div>
-        )}
-        <button
-          onClick={() => toggleSandboxMode(!isSandboxMode)}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-all shadow-md cursor-pointer border ${
-            isSandboxMode 
-              ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)]" 
-              : "bg-white/5 text-slate-300 hover:bg-white/10 border-white/10"
-          }`}
-        >
-          <Settings className="w-3.5 h-3.5 animate-spin-slow text-cyan-400" />
-          {isSandboxMode ? "Exit Recruiters' Sandbox" : "Try Interactive Admin Editor"}
-        </button>
-      </div>
-
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         
         {/* Banner highlighting Anadhi's dual profiles */}

@@ -7,7 +7,8 @@ import React, { useState, useEffect } from "react";
 import { usePortfolio } from "../context/PortfolioContext";
 import { 
   Cloud, CloudOff, RefreshCw, ShieldAlert, BadgeCheck, 
-  ChevronRight, Lock, Key, LogOut, Coffee, Settings 
+  ChevronRight, Lock, Key, LogOut, Coffee, Settings,
+  Eye, EyeOff, X
 } from "lucide-react";
 
 interface NavbarProps {
@@ -29,6 +30,32 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
   } = usePortfolio();
 
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "success" | "error" | "login_required">("idle");
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleToggleEditor = () => {
+    if (isSandboxMode) {
+      toggleSandboxMode(false);
+    } else {
+      setPasswordInput("");
+      setPasswordError("");
+      setShowPassword(false);
+      setShowPasswordModal(true);
+    }
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === "Pika0portfolio") {
+      toggleSandboxMode(true);
+      setShowPasswordModal(false);
+      setPasswordError("");
+    } else {
+      setPasswordError("Incorrect credentials. Access Denied.");
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -124,7 +151,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
         <div className="flex items-center gap-2">
           {/* Global Editor Switch for absolute discoverability */}
           <button
-            onClick={() => toggleSandboxMode(!isSandboxMode)}
+            onClick={handleToggleEditor}
             className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all shadow-md cursor-pointer border ${
               isSandboxMode 
                 ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)] font-bold text-cyan-400" 
@@ -212,6 +239,86 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
           </button>
         ))}
       </div>
+
+      {/* Password Authorization Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-sm bg-[#0b0f19] border border-cyan-500/20 rounded-2xl p-6 shadow-[0_0_50px_rgba(6,182,212,0.15)] animate-scale-up">
+            
+            {/* Close button */}
+            <button
+              onClick={() => setShowPasswordModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Header Lock Icon */}
+            <div className="flex flex-col items-center text-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-white text-sm font-semibold tracking-wide uppercase">
+                  Administrator Access
+                </h3>
+                <p className="text-[10px] text-slate-400 mt-1 max-w-[240px]">
+                  Provide authorization credentials to unlock editing controls across the website.
+                </p>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    if (passwordError) setPasswordError("");
+                  }}
+                  placeholder="Enter administrator password..."
+                  autoFocus
+                  className="w-full px-3.5 py-2.5 bg-black/55 border border-white/10 hover:border-white/15 focus:border-cyan-500/50 rounded-lg text-xs text-white placeholder-slate-500 outline-none transition-all pr-10 font-mono tracking-wider"
+                />
+                
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {passwordError && (
+                <div className="text-[10px] text-rose-400 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg font-mono flex items-center gap-1.5 animate-pulse">
+                  <span className="w-1 h-1 rounded-full bg-rose-400" />
+                  {passwordError}
+                </div>
+              )}
+
+              <div className="flex gap-2.5 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="flex-1 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white rounded-lg text-xs font-semibold cursor-pointer transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:text-cyan-300 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)]"
+                >
+                  Authorize
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </header>
   );

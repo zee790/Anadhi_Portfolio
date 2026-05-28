@@ -85,6 +85,7 @@ interface PortfolioContextType {
   coverLetter: CoverLetter;
   thesis: Thesis;
   documents: DocumentAttachment[];
+  isLoading: boolean;
   
   // Auth state
   user: User | null;
@@ -127,6 +128,19 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [user, setUser] = useState<User | null>(null);
   const [isSandboxMode, setIsSandboxMode] = useState<boolean>(false);
   const [isFirebaseActive, setIsFirebaseActive] = useState<boolean>(isFirebaseConfigured);
+
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadedKeys, setLoadedKeys] = useState<Record<string, boolean>>({});
+
+  const markLoaded = (key: string) => {
+    setLoadedKeys((prev) => {
+      const next = { ...prev, [key]: true };
+      if (Object.keys(next).length >= 8) {
+        setIsLoading(false);
+      }
+      return next;
+    });
+  };
 
   // Core portfolio state
   const [profile, setProfile] = useState<Profile>(initialProfile);
@@ -177,6 +191,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Load Portfolio Data (Firestore vs LocalStorage Fallback)
   useEffect(() => {
+    setIsLoading(true);
+    setLoadedKeys({});
+
     if (isFirebaseActive && db && !isSandboxMode) {
       console.log("PortfolioContext: Loading from Firestore...");
       
@@ -190,7 +207,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             console.warn("Unable to write initial profile to firestore", err);
           });
         }
+        markLoaded("profile");
       }, (error) => {
+        markLoaded("profile");
         handleFirestoreError(error, OperationType.GET, "profiles/main");
       });
 
@@ -203,7 +222,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             console.warn("Unable to write initial cover letter to firestore", err);
           });
         }
+        markLoaded("coverLetter");
       }, (error) => {
+        markLoaded("coverLetter");
         handleFirestoreError(error, OperationType.GET, "cover_letter/main");
       });
 
@@ -216,7 +237,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             console.warn("Unable to write initial thesis to firestore", err);
           });
         }
+        markLoaded("thesis");
       }, (error) => {
+        markLoaded("thesis");
         handleFirestoreError(error, OperationType.GET, "thesis/main");
       });
 
@@ -235,7 +258,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setDoc(doc(db, "experiences", item.id), item).catch(e => console.warn(e));
           });
         }
+        markLoaded("experiences");
       }, (error) => {
+        markLoaded("experiences");
         handleFirestoreError(error, OperationType.GET, "experiences");
       });
 
@@ -253,7 +278,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setDoc(doc(db, "education", item.id), item).catch(e => console.warn(e));
           });
         }
+        markLoaded("education");
       }, (error) => {
+        markLoaded("education");
         handleFirestoreError(error, OperationType.GET, "education");
       });
 
@@ -271,7 +298,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setDoc(doc(db, "skills", item.id), item).catch(e => console.warn(e));
           });
         }
+        markLoaded("skills");
       }, (error) => {
+        markLoaded("skills");
         handleFirestoreError(error, OperationType.GET, "skills");
       });
 
@@ -289,7 +318,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setDoc(doc(db, "certifications", item.id), item).catch(e => console.warn(e));
           });
         }
+        markLoaded("certifications");
       }, (error) => {
+        markLoaded("certifications");
         handleFirestoreError(error, OperationType.GET, "certifications");
       });
 
@@ -307,7 +338,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setDoc(doc(db, "documents", item.id), item).catch(e => console.warn(e));
           });
         }
+        markLoaded("documents");
       }, (error) => {
+        markLoaded("documents");
         handleFirestoreError(error, OperationType.GET, "documents");
       });
 
@@ -341,6 +374,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (localCoverLetter) setCoverLetter(JSON.parse(localCoverLetter));
       if (localThesis) setThesis(JSON.parse(localThesis));
       if (localDocuments) setDocuments(JSON.parse(localDocuments));
+
+      setIsLoading(false);
     }
   }, [isFirebaseActive, isSandboxMode]);
 
@@ -737,6 +772,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       coverLetter,
       thesis,
       documents,
+      isLoading,
       user,
       isAdmin,
       isSandboxMode,

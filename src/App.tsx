@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PortfolioProvider, usePortfolio } from "./context/PortfolioContext";
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
@@ -13,9 +13,66 @@ import { ThesisView } from "./components/ThesisView";
 import { CoverLetterView } from "./components/CoverLetterView";
 import { Linkedin, Mail, ArrowUpCircle, ShieldCheck } from "lucide-react";
 
+// Modern Loading Screen with dynamic estimated loading countdown progress bar
+function LoadingScreen() {
+  const [progress, setProgress] = useState<number>(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          return 100;
+        }
+        // Increment progress smoothly and dynamically
+        const increment = Math.random() * 12 + 6;
+        return Math.min(prev + increment, 100);
+      });
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#02040a] text-slate-200 flex flex-col justify-center items-center font-sans">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative flex items-center justify-center">
+          {/* Elegant outer dynamic spinning glow ring */}
+          <div className="w-16 h-16 border border-cyan-500/10 border-t-2 border-t-cyan-400 rounded-full animate-spin"></div>
+          {/* Core glowing logo orb */}
+          <div className="absolute h-9 w-9 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded text-black flex items-center justify-center font-bold text-xs shadow-[0_0_20px_rgba(6,182,212,0.4)] select-none">
+            AS
+          </div>
+        </div>
+        <div className="flex flex-col items-center text-center mt-2 w-48">
+          <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-widest mb-2 animate-pulse">
+            Initializing ({Math.round(progress)}%)
+          </span>
+          
+          {/* Progress Bar Container */}
+          <div className="w-full h-1 bg-slate-800/80 rounded-full overflow-hidden border border-white/5 shadow-inner">
+            <div 
+              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <span className="text-[9px] text-slate-500 mt-2.5 uppercase tracking-wider font-semibold">
+            Loading Professional Portfolio Assets
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PortfolioAppContent() {
   const [activeSection, setActiveSection] = useState<string>("all");
-  const { profile } = usePortfolio();
+  const { profile, isLoading } = usePortfolio();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
