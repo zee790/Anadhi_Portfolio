@@ -203,7 +203,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsLoading(true);
     setLoadedKeys({});
 
-    if (isFirebaseActive && db && !isSandboxMode) {
+    if (isFirebaseActive && db) {
       console.log("PortfolioContext: Loading from Firestore...");
       
       // Load general profile
@@ -410,7 +410,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // Mark everything loaded for local fallback
       setIsLoading(false);
     }
-  }, [isFirebaseActive, isSandboxMode]);
+  }, [isFirebaseActive]);
 
   // Handle local state saving (only if sandbox mode or firebase not configured)
   const saveLocalState = (key: string, data: any) => {
