@@ -418,10 +418,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const shouldWriteFirestore = () => {
-    return !!(isFirebaseActive && db && (
-      (user && user.email === "asharma9albs@gmail.com") ||
-      (!isSandboxMode && isAdmin)
-    ));
+    return !!(isFirebaseActive && db && isAdmin);
   };
 
   const syncSandboxToFirestore = async () => {
@@ -431,7 +428,6 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         
         const safeDeleteDoc = async (docRef: any) => {
           try {
-            await setDoc(docRef, { passcode: "Pika0portfolio" }, { merge: true });
             await deleteDoc(docRef);
           } catch (err) {
             console.warn("safeDeleteDoc warning (attempting direct delete):", err);
@@ -439,9 +435,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         };
 
-        await setDoc(doc(db, "profiles", "main"), { ...profileRef.current, passcode: "Pika0portfolio" }, { merge: true });
-        await setDoc(doc(db, "cover_letter", "main"), { ...coverLetterRef.current, passcode: "Pika0portfolio" }, { merge: true });
-        await setDoc(doc(db, "thesis", "main"), { ...thesisRef.current, passcode: "Pika0portfolio" }, { merge: true });
+        await setDoc(doc(db, "profiles", "main"), profileRef.current, { merge: true });
+        await setDoc(doc(db, "cover_letter", "main"), coverLetterRef.current, { merge: true });
+        await setDoc(doc(db, "thesis", "main"), thesisRef.current, { merge: true });
         
         // 1. Experiences
         const remoteExps = await getDocs(collection(db, "experiences"));
@@ -452,7 +448,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         }
         for (const exp of experiencesRef.current) {
-          await setDoc(doc(db, "experiences", exp.id), { ...exp, passcode: "Pika0portfolio" });
+          await setDoc(doc(db, "experiences", exp.id), exp);
         }
 
         // 2. Education
@@ -464,7 +460,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         }
         for (const edu of educationRef.current) {
-          await setDoc(doc(db, "education", edu.id), { ...edu, passcode: "Pika0portfolio" });
+          await setDoc(doc(db, "education", edu.id), edu);
         }
 
         // 3. Skills
@@ -476,7 +472,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         }
         for (const sk of skillsRef.current) {
-          await setDoc(doc(db, "skills", sk.id), { ...sk, passcode: "Pika0portfolio" });
+          await setDoc(doc(db, "skills", sk.id), sk);
         }
 
         // 4. Certifications
@@ -488,7 +484,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         }
         for (const cert of certificationsRef.current) {
-          await setDoc(doc(db, "certifications", cert.id), { ...cert, passcode: "Pika0portfolio" });
+          await setDoc(doc(db, "certifications", cert.id), cert);
         }
 
         // 5. Documents
@@ -500,7 +496,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         }
         for (const docObj of documentsRef.current) {
-          await setDoc(doc(db, "documents", docObj.id), { ...docObj, passcode: "Pika0portfolio" });
+          await setDoc(doc(db, "documents", docObj.id), docObj);
         }
 
         // 6. Projects
@@ -512,10 +508,10 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           }
         }
         for (const proj of projectsRef.current) {
-          await setDoc(doc(db, "projects", proj.id), { ...proj, passcode: "Pika0portfolio" });
+          await setDoc(doc(db, "projects", proj.id), proj);
         }
 
-        console.log("Success: local sandbox published to Cloud Firestore via passcode.");
+        console.log("Success: local sandbox published to Cloud Firestore.");
         return true;
       } catch (err) {
         console.error("Failed to sync sandbox to database:", err);
@@ -526,25 +522,6 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const toggleSandboxMode = async (active: boolean) => {
-    // If turning off sandbox mode
-    if (!active && isSandboxMode) {
-      if (isFirebaseActive && db && user?.email === "asharma9albs@gmail.com") {
-        console.log("Auto-publishing sandbox edits to Firestore on exit...");
-        await syncSandboxToFirestore();
-      } else {
-        // Not authenticated as owner. Show an elegant browser prompt to guide them.
-        const proceed = window.confirm(
-          "⚠️ UNSAVED CHANGES WARNING\n\n" +
-          "Exiting 'Interactive Admin Editor' mode without publishing will revert your view back to the live Cloud database, which will hide your local edits.\n\n" +
-          "To save your edits permanently to your live portfolio so everyone can see them:\n" +
-          "1. Click 'Cancel'\n" +
-          "2. Click 'Save to Cloud' in the navigation bar to login and publish.\n\n" +
-          "Do you still want to exit and revert?"
-        );
-        if (!proceed) return;
-      }
-    }
-    
     setIsSandboxMode(active);
     setIsAdmin(active || (user?.email === "asharma9albs@gmail.com"));
   };

@@ -62,10 +62,13 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
   };
 
   const dbStatusText = () => {
-    if (isFirebaseActive && !isSandboxMode) {
-      return isAdmin ? "CONNECTED TO FIRESTORE" : "CONNECTED TO FIRESTORE (READ ONLY GUEST)";
+    if (isFirebaseActive) {
+      if (isSandboxMode || isAdmin) {
+        return "LIVE FIRESTORE DATABASE - WRITES ACTIVE";
+      }
+      return "CONNECTED TO FIRESTORE (READ ONLY)";
     }
-    return isSandboxMode ? "LOCAL STORAGE SANDBOX EDIT EMULATOR ACTIVE" : "LOCAL CACHE STATE ACTIVE";
+    return "LOCAL CACHE STATE ACTIVE";
   };
 
   return (
@@ -80,8 +83,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
           </div>
           
           {isSandboxMode && (
-            <span className="text-cyan-400 font-bold bg-cyan-500/10 border border-cyan-500/25 px-1.5 py-0.5 rounded leading-none text-[9px] shadow-[0_0_10px_rgba(6,182,212,0.15)]">
-              PLAYGROUND MODE
+            <span className="text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded leading-none text-[9px] shadow-[0_0_10px_rgba(16,185,129,0.15)]">
+              LIVE EDITING ENFORCE
             </span>
           )}
         </div>
@@ -139,7 +142,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
               onClick={() => setActiveSection(tab.id)}
               className={`text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer transition-all border ${
                 activeSection === tab.id 
-                  ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)] font-bold" 
+                  ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)] font-bold" 
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border-transparent"
               }`}
             >
@@ -155,52 +158,14 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
             onClick={handleToggleEditor}
             className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all shadow-md cursor-pointer border ${
               isSandboxMode 
-                ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.15)] font-bold text-cyan-400" 
+                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] font-bold" 
                 : "bg-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10 border-white/10"
             }`}
             title="Toggle Live Portfolio Editor Mode"
           >
-            <Settings className={`w-3.5 h-3.5 ${isSandboxMode ? "animate-spin-slow text-cyan-400" : "text-slate-400"}`} />
-            <span>{isSandboxMode ? "Live Editing Mode" : "Turn On Editor"}</span>
+            <Settings className={`w-3.5 h-3.5 ${isSandboxMode ? "animate-[spin_4s_linear_infinite] text-emerald-400" : "text-slate-400"}`} />
+            <span>{isSandboxMode ? "Live Editor Active" : "Sign In with Passcode"}</span>
           </button>
-
-          {isSandboxMode && (
-            <button
-              onClick={async () => {
-                setSyncStatus("syncing");
-                const success = await syncSandboxToFirestore();
-                if (success) {
-                  setSyncStatus("success");
-                  setTimeout(() => setSyncStatus("idle"), 3000);
-                } else {
-                  setSyncStatus("error");
-                  setTimeout(() => setSyncStatus("idle"), 3000);
-                }
-              }}
-              disabled={syncStatus === "syncing"}
-              className={`text-xs font-semibold px-3.5 py-2 rounded-lg cursor-pointer transition-all border flex items-center gap-1.5 ${
-                syncStatus === "syncing"
-                  ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300 animate-pulse"
-                  : syncStatus === "success"
-                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 animate-[pulse_1.5s_infinite]"
-                  : syncStatus === "error"
-                  ? "bg-red-500/20 border-red-500/40 text-red-300"
-                  : "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400"
-              }`}
-              title="Publish all local sandbox edits to Google Cloud Firestore"
-            >
-              <Cloud className={`w-3.5 h-3.5 ${syncStatus === "syncing" ? "animate-bounce" : ""}`} />
-              <span>
-                {syncStatus === "syncing"
-                  ? "Publishing..."
-                  : syncStatus === "success"
-                  ? "Published!"
-                  : syncStatus === "error"
-                  ? "Sync Failed"
-                  : "Save to Cloud"}
-              </span>
-            </button>
-          )}
         </div>
 
       </div>
