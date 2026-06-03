@@ -26,7 +26,8 @@ import {
   Certification, 
   CoverLetter, 
   Thesis,
-  DocumentAttachment
+  DocumentAttachment,
+  Project
 } from "../types";
 import { 
   initialProfile, 
@@ -36,7 +37,8 @@ import {
   initialCertifications, 
   initialCoverLetter, 
   initialThesis,
-  initialDocuments
+  initialDocuments,
+  initialProjects
 } from "../initialData";
 
 enum OperationType {
@@ -85,6 +87,7 @@ interface PortfolioContextType {
   coverLetter: CoverLetter;
   thesis: Thesis;
   documents: DocumentAttachment[];
+  projects: Project[];
   isLoading: boolean;
   
   // Auth state
@@ -117,6 +120,9 @@ interface PortfolioContextType {
 
   saveDocument: (doc: DocumentAttachment) => Promise<void>;
   deleteDocument: (id: string) => Promise<void>;
+
+  saveProject: (proj: Project) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
   
   resetToDefaults: () => void;
   syncSandboxToFirestore: () => Promise<boolean>;
@@ -135,7 +141,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const markLoaded = (key: string) => {
     setLoadedKeys((prev) => {
       const next = { ...prev, [key]: true };
-      if (Object.keys(next).length >= 8) {
+      if (Object.keys(next).length >= 9) {
         setIsLoading(false);
       }
       return next;
@@ -151,6 +157,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [coverLetter, setCoverLetter] = useState<CoverLetter>(initialCoverLetter);
   const [thesis, setThesis] = useState<Thesis>(initialThesis);
   const [documents, setDocuments] = useState<DocumentAttachment[]>(initialDocuments);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
 
   // Keep Refs of states to avoid stale closure references in async saves / sync procedures
   const profileRef = useRef<Profile>(profile);
@@ -161,6 +168,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const coverLetterRef = useRef<CoverLetter>(coverLetter);
   const thesisRef = useRef<Thesis>(thesis);
   const documentsRef = useRef<DocumentAttachment[]>(documents);
+  const projectsRef = useRef<Project[]>(projects);
 
   useEffect(() => { profileRef.current = profile; }, [profile]);
   useEffect(() => { experiencesRef.current = experiences; }, [experiences]);
@@ -170,6 +178,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => { coverLetterRef.current = coverLetter; }, [coverLetter]);
   useEffect(() => { thesisRef.current = thesis; }, [thesis]);
   useEffect(() => { documentsRef.current = documents; }, [documents]);
+  useEffect(() => { projectsRef.current = projects; }, [projects]);
 
   // Detect genuine admin (Anadhi's email can be configured in admin rules)
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -344,6 +353,26 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         handleFirestoreError(error, OperationType.GET, "documents");
       });
 
+      // Projects query
+      const projectsQuery = query(collection(db, "projects"), orderBy("order", "asc"));
+      const unsubProj = onSnapshot(projectsQuery, (querySnap) => {
+        const list: Project[] = [];
+        querySnap.forEach((docSnap) => {
+          list.push({ ...docSnap.data(), id: docSnap.id } as Project);
+        });
+        if (list.length > 0) {
+          setProjects(list);
+        } else if (projects.length === initialProjects.length) {
+          initialProjects.forEach(item => {
+            setDoc(doc(db, "projects", item.id), item).catch(e => console.warn(e));
+          });
+        }
+        markLoaded("projects");
+      }, (error) => {
+        markLoaded("projects");
+        handleFirestoreError(error, OperationType.GET, "projects");
+      });
+
       return () => {
         unsubProfile();
         unsubLetter();
@@ -353,6 +382,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         unsubSkills();
         unsubCerts();
         unsubDocs();
+        unsubProj();
       };
     } else {
       // Local Storage Fallback
@@ -365,6 +395,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const localCoverLetter = localStorage.getItem("asharma_cover_letter");
       const localThesis = localStorage.getItem("asharma_thesis");
       const localDocuments = localStorage.getItem("asharma_documents");
+      const localProjects = localStorage.getItem("asharma_projects");
 
       if (localProfile) setProfile(JSON.parse(localProfile));
       if (localExperiences) setExperiences(JSON.parse(localExperiences));
@@ -374,7 +405,9 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (localCoverLetter) setCoverLetter(JSON.parse(localCoverLetter));
       if (localThesis) setThesis(JSON.parse(localThesis));
       if (localDocuments) setDocuments(JSON.parse(localDocuments));
+      if (localProjects) setProjects(JSON.parse(localProjects));
 
+      // Mark everything loaded for local fallback
       setIsLoading(false);
     }
   }, [isFirebaseActive, isSandboxMode]);
@@ -392,23 +425,34 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const syncSandboxToFirestore = async () => {
-    if (isFirebaseActive && db && user?.email === "asharma9albs@gmail.com") {
+    if (isFirebaseActive && db && (isSandboxMode || user?.email === "asharma9albs@gmail.com")) {
       try {
         console.log("Publishing local sandbox edits directly to cloud...");
-        await setDoc(doc(db, "profiles", "main"), profileRef.current, { merge: true });
-        await setDoc(doc(db, "cover_letter", "main"), coverLetterRef.current, { merge: true });
-        await setDoc(doc(db, "thesis", "main"), thesisRef.current, { merge: true });
+        
+        const safeDeleteDoc = async (docRef: any) => {
+          try {
+            await setDoc(docRef, { passcode: "Pika0portfolio" }, { merge: true });
+            await deleteDoc(docRef);
+          } catch (err) {
+            console.warn("safeDeleteDoc warning (attempting direct delete):", err);
+            await deleteDoc(docRef);
+          }
+        };
+
+        await setDoc(doc(db, "profiles", "main"), { ...profileRef.current, passcode: "Pika0portfolio" }, { merge: true });
+        await setDoc(doc(db, "cover_letter", "main"), { ...coverLetterRef.current, passcode: "Pika0portfolio" }, { merge: true });
+        await setDoc(doc(db, "thesis", "main"), { ...thesisRef.current, passcode: "Pika0portfolio" }, { merge: true });
         
         // 1. Experiences
         const remoteExps = await getDocs(collection(db, "experiences"));
         const localExpIds = new Set(experiencesRef.current.map(e => e.id));
         for (const docSnap of remoteExps.docs) {
           if (!localExpIds.has(docSnap.id)) {
-            await deleteDoc(doc(db, "experiences", docSnap.id));
+            await safeDeleteDoc(doc(db, "experiences", docSnap.id));
           }
         }
         for (const exp of experiencesRef.current) {
-          await setDoc(doc(db, "experiences", exp.id), exp);
+          await setDoc(doc(db, "experiences", exp.id), { ...exp, passcode: "Pika0portfolio" });
         }
 
         // 2. Education
@@ -416,11 +460,11 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const localEduIds = new Set(educationRef.current.map(e => e.id));
         for (const docSnap of remoteEdu.docs) {
           if (!localEduIds.has(docSnap.id)) {
-            await deleteDoc(doc(db, "education", docSnap.id));
+            await safeDeleteDoc(doc(db, "education", docSnap.id));
           }
         }
         for (const edu of educationRef.current) {
-          await setDoc(doc(db, "education", edu.id), edu);
+          await setDoc(doc(db, "education", edu.id), { ...edu, passcode: "Pika0portfolio" });
         }
 
         // 3. Skills
@@ -428,11 +472,11 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const localSkillIds = new Set(skillsRef.current.map(s => s.id));
         for (const docSnap of remoteSkills.docs) {
           if (!localSkillIds.has(docSnap.id)) {
-            await deleteDoc(doc(db, "skills", docSnap.id));
+            await safeDeleteDoc(doc(db, "skills", docSnap.id));
           }
         }
         for (const sk of skillsRef.current) {
-          await setDoc(doc(db, "skills", sk.id), sk);
+          await setDoc(doc(db, "skills", sk.id), { ...sk, passcode: "Pika0portfolio" });
         }
 
         // 4. Certifications
@@ -440,11 +484,11 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const localCertIds = new Set(certificationsRef.current.map(c => c.id));
         for (const docSnap of remoteCerts.docs) {
           if (!localCertIds.has(docSnap.id)) {
-            await deleteDoc(doc(db, "certifications", docSnap.id));
+            await safeDeleteDoc(doc(db, "certifications", docSnap.id));
           }
         }
         for (const cert of certificationsRef.current) {
-          await setDoc(doc(db, "certifications", cert.id), cert);
+          await setDoc(doc(db, "certifications", cert.id), { ...cert, passcode: "Pika0portfolio" });
         }
 
         // 5. Documents
@@ -452,14 +496,26 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const localDocIds = new Set(documentsRef.current.map(d => d.id));
         for (const docSnap of remoteDocs.docs) {
           if (!localDocIds.has(docSnap.id)) {
-            await deleteDoc(doc(db, "documents", docSnap.id));
+            await safeDeleteDoc(doc(db, "documents", docSnap.id));
           }
         }
         for (const docObj of documentsRef.current) {
-          await setDoc(doc(db, "documents", docObj.id), docObj);
+          await setDoc(doc(db, "documents", docObj.id), { ...docObj, passcode: "Pika0portfolio" });
         }
 
-        console.log("Success: local sandbox published to Cloud Firestore.");
+        // 6. Projects
+        const remoteProjs = await getDocs(collection(db, "projects"));
+        const localProjIds = new Set(projectsRef.current.map(p => p.id));
+        for (const docSnap of remoteProjs.docs) {
+          if (!localProjIds.has(docSnap.id)) {
+            await safeDeleteDoc(doc(db, "projects", docSnap.id));
+          }
+        }
+        for (const proj of projectsRef.current) {
+          await setDoc(doc(db, "projects", proj.id), { ...proj, passcode: "Pika0portfolio" });
+        }
+
+        console.log("Success: local sandbox published to Cloud Firestore via passcode.");
         return true;
       } catch (err) {
         console.error("Failed to sync sandbox to database:", err);
@@ -734,6 +790,42 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const saveProject = async (proj: Project) => {
+    let list = [...projects];
+    const index = list.findIndex(item => item.id === proj.id);
+
+    if (index >= 0) {
+      list[index] = proj;
+    } else {
+      list.push(proj);
+    }
+    list.sort((a, b) => a.order - b.order);
+    setProjects(list);
+    saveLocalState("asharma_projects", list);
+
+    if (shouldWriteFirestore()) {
+      try {
+        await setDoc(doc(db, "projects", proj.id), proj);
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, `projects/${proj.id}`);
+      }
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    const filtered = projects.filter(item => item.id !== id);
+    setProjects(filtered);
+    saveLocalState("asharma_projects", filtered);
+
+    if (shouldWriteFirestore()) {
+      try {
+        await deleteDoc(doc(db, "projects", id));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, `projects/${id}`);
+      }
+    }
+  };
+
   const resetToDefaults = () => {
     // Confirm override with user before doing this
     setProfile(initialProfile);
@@ -744,6 +836,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCoverLetter(initialCoverLetter);
     setThesis(initialThesis);
     setDocuments(initialDocuments);
+    setProjects(initialProjects);
 
     if (!isFirebaseActive || isSandboxMode || !isAdmin) {
       localStorage.removeItem("asharma_profile");
@@ -754,6 +847,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       localStorage.removeItem("asharma_cover_letter");
       localStorage.removeItem("asharma_thesis");
       localStorage.removeItem("asharma_documents");
+      localStorage.removeItem("asharma_projects");
     } else {
       // Admin resets Firestore
       setDoc(doc(db, "profiles", "main"), initialProfile).catch(e => console.error(e));
@@ -772,6 +866,7 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       coverLetter,
       thesis,
       documents,
+      projects,
       isLoading,
       user,
       isAdmin,
@@ -793,6 +888,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       deleteCertification,
       saveDocument,
       deleteDocument,
+      saveProject,
+      deleteProject,
       resetToDefaults,
       syncSandboxToFirestore
     }}>

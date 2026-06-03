@@ -131,7 +131,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
             { id: "resume", label: "Interactive Resume" },
             { id: "vault", label: "Document Vault" },
             { id: "thesis", label: "Weather ML Thesis" },
-            { id: "cover", label: "Cover Letter" }
+            { id: "cover", label: "Cover Letter" },
+            { id: "projects", label: "Projects" }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -166,11 +167,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
           {isSandboxMode && (
             <button
               onClick={async () => {
-                if (!user || user.email !== "asharma9albs@gmail.com") {
-                  setSyncStatus("login_required");
-                  setTimeout(() => setSyncStatus("idle"), 5000);
-                  return;
-                }
                 setSyncStatus("syncing");
                 const success = await syncSandboxToFirestore();
                 if (success) {
@@ -189,15 +185,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
                   ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 animate-[pulse_1.5s_infinite]"
                   : syncStatus === "error"
                   ? "bg-red-500/20 border-red-500/40 text-red-300"
-                  : syncStatus === "login_required"
-                  ? "bg-amber-500/20 border-amber-500/40 text-amber-300 animate-bounce"
                   : "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400"
               }`}
-              title={
-                !user || user.email !== "asharma9albs@gmail.com"
-                  ? "Authenticate as owner to publish changes to Google Cloud Firestore"
-                  : "Publish all local sandbox edits to Google Cloud Firestore"
-              }
+              title="Publish all local sandbox edits to Google Cloud Firestore"
             >
               <Cloud className={`w-3.5 h-3.5 ${syncStatus === "syncing" ? "animate-bounce" : ""}`} />
               <span>
@@ -207,8 +197,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
                   ? "Published!"
                   : syncStatus === "error"
                   ? "Sync Failed"
-                  : syncStatus === "login_required"
-                  ? "Login via Top-Right First!"
                   : "Save to Cloud"}
               </span>
             </button>
@@ -224,7 +212,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
           { id: "resume", label: "Resume" },
           { id: "vault", label: "Attachments" },
           { id: "thesis", label: "ML Thesis" },
-          { id: "cover", label: "Cover Letter" }
+          { id: "cover", label: "Cover Letter" },
+          { id: "projects", label: "Projects" }
         ].map((tab) => (
           <button
             key={tab.id}

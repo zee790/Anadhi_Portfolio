@@ -104,3 +104,13 @@ export interface DocumentAttachment {
   uploadedAt: string;
   size?: string;
 }
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  projectUrl?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  order: number;
+}

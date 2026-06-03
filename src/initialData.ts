@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Profile, Experience, Education, SkillCategory, Certification, CoverLetter, Thesis, DocumentAttachment } from "./types";
+import { Profile, Experience, Education, SkillCategory, Certification, CoverLetter, Thesis, DocumentAttachment, Project } from "./types";
 
 export const initialProfile: Profile = {
   name: "Anadhi Sharma",
@@ -202,5 +202,24 @@ export const initialDocuments: DocumentAttachment[] = [
     fileType: "application/pdf",
     uploadedAt: "2026-05-26T09:15:00Z",
     size: "95 KB"
+  }
+];
+
+export const initialProjects: Project[] = [
+  {
+    id: "proj-1",
+    title: "Kona Low Deep Learning Classifier",
+    description: "Developed and implemented a custom 2D Convolutional Neural Network (CNN) in Python with PyTorch. It analyzes large-scale ERA5 reanalysis wind fields down to convective resolution, resolving a key climate forecasting data gap and identifying rare subtropical cyclone formations with a validated 94.2% accuracy.",
+    projectUrl: "https://scholarsarchive.library.albany.edu/etd/107",
+    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // Starter video link
+    order: 1
+  },
+  {
+    id: "proj-2",
+    title: "Scope 3 Carbon Accounting & CSRD Intelligence Parser",
+    description: "Engineered automation procedures and custom GPT-powered NLP scrapers to extract and synthesize Scope 1, 2, and 3 disclosures from complex retail and maritime sustainability reports. This provides corporate clients with deep competitive insights and real-time alignment against EU Corporate Sustainability Reporting Directive triggers.",
+    projectUrl: "https://github.com/zee790/Anadhi_Portfolio",
+    imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
+    order: 2
   }
 ];

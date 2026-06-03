@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Analytics } from "@vercel/analytics/react";
 import { PortfolioProvider, usePortfolio } from "./context/PortfolioContext";
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
@@ -12,6 +11,7 @@ import { ResumeView } from "./components/ResumeView";
 import { DocumentVault } from "./components/DocumentVault";
 import { ThesisView } from "./components/ThesisView";
 import { CoverLetterView } from "./components/CoverLetterView";
+import { ProjectsView } from "./components/ProjectsView";
 import { Linkedin, Mail, ArrowUpCircle, ShieldCheck } from "lucide-react";
 
 // Modern Loading Screen with dynamic estimated loading countdown progress bar
@@ -113,6 +113,11 @@ function PortfolioAppContent() {
             <div id="cover-sec">
               <CoverLetterView />
             </div>
+
+            {/* 5. Projects portfolio layout */}
+            <div id="projects-sec">
+              <ProjectsView />
+            </div>
           </div>
         )}
 
@@ -137,6 +142,12 @@ function PortfolioAppContent() {
         {activeSection === "cover" && (
           <div className="animate-fadeIn">
             <CoverLetterView />
+          </div>
+        )}
+
+        {activeSection === "projects" && (
+          <div className="animate-fadeIn">
+            <ProjectsView />
           </div>
         )}
       </main>
@@ -198,7 +209,6 @@ export default function App() {
   return (
     <PortfolioProvider>
       <PortfolioAppContent />
-      <Analytics />
     </PortfolioProvider>
   );
 }
