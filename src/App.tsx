@@ -11,7 +11,6 @@ import { ResumeView } from "./components/ResumeView";
 import { DocumentVault } from "./components/DocumentVault";
 import { ThesisView } from "./components/ThesisView";
 import { CoverLetterView } from "./components/CoverLetterView";
-import { ProjectsView } from "./components/ProjectsView";
 import { Linkedin, Mail, ArrowUpCircle, ShieldCheck } from "lucide-react";
 
 // Modern Loading Screen with dynamic estimated loading countdown progress bar
@@ -114,10 +113,7 @@ function PortfolioAppContent() {
               <CoverLetterView />
             </div>
 
-            {/* 5. Projects portfolio layout */}
-            <div id="projects-sec">
-              <ProjectsView />
-            </div>
+
           </div>
         )}
 
@@ -145,11 +141,7 @@ function PortfolioAppContent() {
           </div>
         )}
 
-        {activeSection === "projects" && (
-          <div className="animate-fadeIn">
-            <ProjectsView />
-          </div>
-        )}
+
       </main>
 
       {/* Floating Scroll To Top button */}
