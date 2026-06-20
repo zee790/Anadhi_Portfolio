@@ -8,7 +8,6 @@ import {
   collection, 
   doc, 
   getDocs, 
-  getDoc,
   setDoc, 
   addDoc, 
   updateDoc, 
@@ -133,7 +132,7 @@ const PortfolioContext = createContext<PortfolioContextType | undefined>(undefin
 
 export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isSandboxMode, setIsSandboxMode] = useState<boolean>(true);
+  const [isSandboxMode, setIsSandboxMode] = useState<boolean>(false);
   const [isFirebaseActive, setIsFirebaseActive] = useState<boolean>(isFirebaseConfigured);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -182,14 +181,19 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => { projectsRef.current = projects; }, [projects]);
 
   // Detect genuine admin (Anadhi's email can be configured in admin rules)
-  const [isAdmin, setIsAdmin] = useState<boolean>(true);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   // Sync auth updates
   useEffect(() => {
     if (!isFirebaseActive || !auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setIsAdmin(true);
+      if (currentUser && currentUser.email === "asharma9albs@gmail.com") {
+        setIsAdmin(true);
+        // Do NOT disable sandbox mode here automatically! Let the dev keep their local edits so they can sync/publish them.
+      } else {
+        setIsAdmin(false);
+      }
     });
     return () => unsubscribe();
   }, [isFirebaseActive]);
@@ -202,54 +206,15 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (isFirebaseActive && db) {
       console.log("PortfolioContext: Loading from Firestore...");
       
-      // Safe one-time seeding of configuration if db is empty
-      const checkAndSeed = async () => {
-        try {
-          const configRef = doc(db, "system", "config");
-          const configSnap = await getDoc(configRef);
-          if (!configSnap.exists()) {
-            console.log("Portfolio db has not been seeded yet. Seeding default initial datasets...");
-            
-            // Seed profile documents
-            await setDoc(doc(db, "profiles", "main"), initialProfile);
-            await setDoc(doc(db, "cover_letter", "main"), initialCoverLetter);
-            await setDoc(doc(db, "thesis", "main"), initialThesis);
-
-            // Seed collections
-            for (const item of initialExperiences) {
-              await setDoc(doc(db, "experiences", item.id), item);
-            }
-            for (const item of initialEducation) {
-              await setDoc(doc(db, "education", item.id), item);
-            }
-            for (const item of initialSkills) {
-              await setDoc(doc(db, "skills", item.id), item);
-            }
-            for (const item of initialCertifications) {
-              await setDoc(doc(db, "certifications", item.id), item);
-            }
-            for (const item of initialDocuments) {
-              await setDoc(doc(db, "documents", item.id), item);
-            }
-            for (const item of initialProjects) {
-              await setDoc(doc(db, "projects", item.id), item);
-            }
-
-            // Write seed record
-            await setDoc(configRef, { seeded: true });
-            console.log("Portfolio db seeded successfully with defaults!");
-          }
-        } catch (seedErr) {
-          console.warn("Seeding config check / write warning:", seedErr);
-        }
-      };
-
-      checkAndSeed();
-
       // Load general profile
       const unsubProfile = onSnapshot(doc(db, "profiles", "main"), (docSnap) => {
         if (docSnap.exists()) {
           setProfile(docSnap.data() as Profile);
+        } else {
+          // Initialize in DB if missing
+          setDoc(doc(db, "profiles", "main"), initialProfile).catch(err => {
+            console.warn("Unable to write initial profile to firestore", err);
+          });
         }
         markLoaded("profile");
       }, (error) => {
@@ -261,6 +226,10 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const unsubLetter = onSnapshot(doc(db, "cover_letter", "main"), (docSnap) => {
         if (docSnap.exists()) {
           setCoverLetter(docSnap.data() as CoverLetter);
+        } else {
+          setDoc(doc(db, "cover_letter", "main"), initialCoverLetter).catch(err => {
+            console.warn("Unable to write initial cover letter to firestore", err);
+          });
         }
         markLoaded("coverLetter");
       }, (error) => {
@@ -272,6 +241,10 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const unsubThesis = onSnapshot(doc(db, "thesis", "main"), (docSnap) => {
         if (docSnap.exists()) {
           setThesis(docSnap.data() as Thesis);
+        } else {
+          setDoc(doc(db, "thesis", "main"), initialThesis).catch(err => {
+            console.warn("Unable to write initial thesis to firestore", err);
+          });
         }
         markLoaded("thesis");
       }, (error) => {
@@ -286,7 +259,14 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         querySnap.forEach((docSnap) => {
           list.push({ ...docSnap.data(), id: docSnap.id } as Experience);
         });
-        setExperiences(list);
+        if (list.length > 0) {
+          setExperiences(list);
+        } else if (experiences.length === initialExperiences.length) {
+          // Initialize DB with initial list
+          initialExperiences.forEach(item => {
+            setDoc(doc(db, "experiences", item.id), item).catch(e => console.warn(e));
+          });
+        }
         markLoaded("experiences");
       }, (error) => {
         markLoaded("experiences");
@@ -300,7 +280,13 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         querySnap.forEach((docSnap) => {
           list.push({ ...docSnap.data(), id: docSnap.id } as Education);
         });
-        setEducation(list);
+        if (list.length > 0) {
+          setEducation(list);
+        } else if (education.length === initialEducation.length) {
+          initialEducation.forEach(item => {
+            setDoc(doc(db, "education", item.id), item).catch(e => console.warn(e));
+          });
+        }
         markLoaded("education");
       }, (error) => {
         markLoaded("education");
@@ -314,7 +300,13 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         querySnap.forEach((docSnap) => {
           list.push({ ...docSnap.data(), id: docSnap.id } as SkillCategory);
         });
-        setSkills(list);
+        if (list.length > 0) {
+          setSkills(list);
+        } else if (skills.length === initialSkills.length) {
+          initialSkills.forEach(item => {
+            setDoc(doc(db, "skills", item.id), item).catch(e => console.warn(e));
+          });
+        }
         markLoaded("skills");
       }, (error) => {
         markLoaded("skills");
@@ -328,7 +320,13 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         querySnap.forEach((docSnap) => {
           list.push({ ...docSnap.data(), id: docSnap.id } as Certification);
         });
-        setCertifications(list);
+        if (list.length > 0) {
+          setCertifications(list);
+        } else if (certifications.length === initialCertifications.length) {
+          initialCertifications.forEach(item => {
+            setDoc(doc(db, "certifications", item.id), item).catch(e => console.warn(e));
+          });
+        }
         markLoaded("certifications");
       }, (error) => {
         markLoaded("certifications");
@@ -342,7 +340,13 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         querySnap.forEach((docSnap) => {
           list.push({ ...docSnap.data(), id: docSnap.id } as DocumentAttachment);
         });
-        setDocuments(list);
+        if (list.length > 0) {
+          setDocuments(list);
+        } else if (documents.length === initialDocuments.length) {
+          initialDocuments.forEach(item => {
+            setDoc(doc(db, "documents", item.id), item).catch(e => console.warn(e));
+          });
+        }
         markLoaded("documents");
       }, (error) => {
         markLoaded("documents");
@@ -356,7 +360,13 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         querySnap.forEach((docSnap) => {
           list.push({ ...docSnap.data(), id: docSnap.id } as Project);
         });
-        setProjects(list);
+        if (list.length > 0) {
+          setProjects(list);
+        } else if (projects.length === initialProjects.length) {
+          initialProjects.forEach(item => {
+            setDoc(doc(db, "projects", item.id), item).catch(e => console.warn(e));
+          });
+        }
         markLoaded("projects");
       }, (error) => {
         markLoaded("projects");
@@ -512,8 +522,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const toggleSandboxMode = async (active: boolean) => {
-    setIsSandboxMode(true);
-    setIsAdmin(true);
+    setIsSandboxMode(active);
+    setIsAdmin(active || (user?.email === "asharma9albs@gmail.com"));
   };
 
   const triggerGoogleLogin = async () => {
@@ -527,8 +537,8 @@ export const PortfolioProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const triggerLogout = async () => {
     try {
       await logout();
-      setIsAdmin(true);
-      setIsSandboxMode(true);
+      setIsAdmin(false);
+      setIsSandboxMode(false);
     } catch (e) {
       console.error("Logout failed:", e);
     }

@@ -152,6 +152,19 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, setActiveSection 
 
         {/* Print / Download triggers */}
         <div className="flex items-center gap-2">
+          {/* Global Editor Switch for absolute discoverability */}
+          <button
+            onClick={handleToggleEditor}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all shadow-md cursor-pointer border ${
+              isSandboxMode 
+                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] font-bold" 
+                : "bg-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10 border-white/10"
+            }`}
+            title="Toggle Live Portfolio Editor Mode"
+          >
+            <Settings className={`w-3.5 h-3.5 ${isSandboxMode ? "animate-[spin_4s_linear_infinite] text-emerald-400" : "text-slate-400"}`} />
+            <span>{isSandboxMode ? "Live Editor Active" : "Sign In with Passcode"}</span>
+          </button>
         </div>
 
       </div>
